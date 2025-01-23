@@ -189,6 +189,19 @@ fn parseBKGD(chunk: Types.Chunk, color: ColorType) Types.bKGD {
     }
 }
 
+fn parseTRNS(chunk: Types.Chunk, color: ColorType) Types.tRNS {
+    if (color == ColorType.Greyscale and chunk.length == 2) {
+        return Types.tRNS{ .grey = u8ToU16(chunk.chunkData.items[0..2]) };
+    } else if (color == ColorType.TrueColor and chunk.length == 6) {
+        return Types.tRNS{ .rgb = Types.RGB{ .red = u8ToU16(chunk.chunkData.items[0..2]), .blue = u8ToU16(chunk.chunkData.items[2..4]), .green = u8ToU16(chunk.chunkData.items[4..6]) } };
+    } else if (color == ColorType.IndexedColor and chunk.length == 3) {
+        return Types.tRNS{ .alphas = chunk.chunkData.items };
+    } else {
+        // TODO throw an error
+        return undefined;
+    }
+}
+
 // TODO turn this into a generic
 fn u8ToU32(vals: *[4]u8) u32 {
     var combinedVal: u32 = 0;
@@ -252,12 +265,15 @@ pub fn parseChunks(chunks: ArrayList(Types.Chunk)) void {
             continue;
         } else if (chunk.chunkType == ChunkType.TRNS) {
             // parse TRNS
+            _ = parseTRNS(chunk, header.colorType);
         } else if (chunk.chunkType == ChunkType.pHYs) {
             // parse pHYs
         } else if (chunk.chunkType == ChunkType.sPLT) {
             // parse sPLT
         } else if (chunk.chunkType == ChunkType.IDAT) {
             // parse IDAT
+        } else {
+            std.log.info("{s} : 0x{x}", .{ "Unrecognized type", @intFromEnum(chunk.chunkType) });
         }
     }
 }
